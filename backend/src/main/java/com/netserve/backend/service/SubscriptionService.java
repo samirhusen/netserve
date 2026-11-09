@@ -24,6 +24,7 @@ public class SubscriptionService {
     private final BillRepository billRepository;
     private final UserRepository userRepository;
     private final PlanService planService;
+    private final EmailService emailService;
 
     @Transactional
     public SubscriptionResponse subscribe(String email, Long planId) {
@@ -34,7 +35,10 @@ public class SubscriptionService {
         }
 
         Plan plan = getActivePlan(planId);
-        return SubscriptionResponse.from(createSubscriptionWithBill(user, plan));
+        Subscription subscription = createSubscriptionWithBill(user, plan);
+        emailService.sendSubscriptionEmail(user.getEmail(), user.getFullName(),
+                plan.getName(), plan.getPrice(), subscription.getEndDate(), false);   // NEW
+        return SubscriptionResponse.from(subscription);
     }
 
     @Transactional
@@ -55,7 +59,10 @@ public class SubscriptionService {
         current.setEndDate(LocalDate.now());
         subscriptionRepository.save(current);
 
-        return SubscriptionResponse.from(createSubscriptionWithBill(user, newPlan));
+        Subscription subscription = createSubscriptionWithBill(user, newPlan);
+        emailService.sendSubscriptionEmail(user.getEmail(), user.getFullName(),
+                newPlan.getName(), newPlan.getPrice(), subscription.getEndDate(), true);
+        return SubscriptionResponse.from(subscription);
     }
 
     @Transactional(readOnly = true)

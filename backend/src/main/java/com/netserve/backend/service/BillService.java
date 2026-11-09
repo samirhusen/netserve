@@ -22,6 +22,7 @@ public class BillService {
 
     private final BillRepository billRepository;
     private final UserRepository userRepository;
+    private final EmailService emailService;
 
     @Transactional(readOnly = true)
     public List<BillResponse> getMyBills(String email) {
@@ -51,7 +52,11 @@ public class BillService {
 
         bill.setStatus(BillStatus.PAID);
         bill.setPaidAt(LocalDateTime.now());
-        return BillResponse.from(billRepository.save(bill));
+
+        Bill saved = billRepository.save(bill);
+        emailService.sendPaymentEmail(user.getEmail(), user.getFullName(),
+                saved.getId(), saved.getAmount(), saved.getSubscription().getPlan().getName());
+        return BillResponse.from(saved);
     }
 
     @Transactional(readOnly = true)

@@ -22,6 +22,7 @@ public class TicketService {
 
     private final TicketRepository ticketRepository;
     private final UserRepository userRepository;
+    private final EmailService emailService;
 
     @Transactional
     public TicketResponse createTicket(String email, TicketRequest request) {
@@ -75,7 +76,10 @@ public class TicketService {
             ticket.setAdminRemark(request.adminRemark());
         }
 
-        return TicketResponse.from(ticketRepository.saveAndFlush(ticket));
+        Ticket saved = ticketRepository.saveAndFlush(ticket);
+        emailService.sendTicketUpdateEmail(saved.getUser().getEmail(), saved.getUser().getFullName(),
+                saved.getId(), saved.getSubject(), saved.getStatus().name(), saved.getAdminRemark());
+        return TicketResponse.from(saved);
     }
 
     private User findUser(String email) {
