@@ -69,11 +69,19 @@ public class SecurityConfig {
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
+        // FRONTEND_URL can hold several addresses separated by commas.
+        // Spaces and trailing slashes are removed so small typos don't break CORS.
+        List<String> origins = java.util.Arrays.stream(frontendUrl.split(","))
+                .map(String::trim)
+                .map(url -> url.endsWith("/") ? url.substring(0, url.length() - 1) : url)
+                .filter(url -> !url.isEmpty())
+                .toList();
+    
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of(frontendUrl));
+        config.setAllowedOrigins(origins);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
-
+    
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return source;
